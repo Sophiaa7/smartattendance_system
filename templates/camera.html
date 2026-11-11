@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Take Attendance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; }
+        #video-container { max-width: 720px; margin: 0 auto; }
+        #video { width: 100%; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/">Smart Attendance</a>
+        <a href="/" class="btn btn-sm btn-outline-light">Back to Home</a>
+    </div>
+</nav>
+
+<div class="container text-center mt-4">
+    <h3 class="mb-2">Face Recognition Attendance</h3>
+    <p class="text-muted">Look at the camera. Attendance will be marked automatically.</p>
+
+    <div id="video-container" class="mt-4">
+        <div id="loading" class="p-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-3">Starting camera... Please wait</p>
+        </div>
+
+        <img src="{{ url_for('video_feed') }}" id="video" style="display:none;"
+             onload="document.getElementById('loading').style.display='none'; this.style.display='block';">
+    </div>
+
+    <div class="mt-4">
+        <a href="/" class="btn btn-secondary">Cancel & Go Home</a>
+    </div>
+</div>
+
+<script>
+    // Auto redirect after 12 seconds
+    setTimeout(function() {
+        window.location.href = "/";
+    }, 12000);
+</script>
+
+</body>
+</html>
