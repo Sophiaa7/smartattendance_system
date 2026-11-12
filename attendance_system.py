@@ -425,7 +425,7 @@ def recognize():
     x, y, w, h = faces[0]
     roi = cv2.resize(cv2.equalizeHist(gray[y:y + h, x:x + w]), (200, 200))
     label, conf = model.predict(roi)
-    name = labels.get(label, "Unknown") if conf < 85 else "Unknown"
+    name = labels.get(int(label), "Unknown") if conf < 120 else "Unknown"
     if name == "Unknown":
         return {"marked": False, "name": None, "message": f"Unknown face ({conf:.0f})"}
     if mark_attendance(name, confidence=conf):

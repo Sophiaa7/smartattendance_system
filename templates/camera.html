@@ -58,7 +58,29 @@ async function sendFrame() {
         statusDiv.innerHTML = `<div class="alert alert-secondary py-2">${data.message}</div>`;
     }
 }
-setInterval(sendFrame, 800);
+async function sendFrame() {
+    if (done || !video.srcObject || video.readyState < 2) return;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(video, 0, 0, 640, 480);
+    const image = canvas.toDataURL("image/jpeg", 0.8);
+    try {
+        const response = await fetch("/recognize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image })
+        });
+        const data = await response.json();
+        if (data.marked) {
+            done = true;
+            statusDiv.innerHTML = `<div class="alert alert-success">Attendance marked for ${data.name}</div>`;
+            setTimeout(() => { window.location.href = "/"; }, 2500);
+        } else {
+            statusDiv.innerHTML = `<div class="alert alert-secondary py-2">${data.message}</div>`;
+        }
+    } catch (err) {
+        statusDiv.innerHTML = `<div class="alert alert-danger">Recognition failed. Check the server log.</div>`;
+    }
+}
 </script>
 </body>
 </html>
