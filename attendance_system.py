@@ -6,6 +6,7 @@ import time
 import os
 from datetime import datetime
 import pandas as pd
+import base64
 
 from database import (
     mark_attendance as db_mark_attendance,
@@ -388,6 +389,48 @@ def train_model():
 
     return render_template("train_model.html", message=message, message_type=message_type)
 
+@app.route("/recognize", methods=["POST"])
+def recognize():
+    global model, labels, face_cascade
+
+    if face_cascade is None:
+        face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        )
+    if model is None and os.path.exists("face_model.yml") and os.path.exists("labels.npy"):
+        model = cv2.face.LBPHFaceRecognizer_create()
+        model.read("face_model.yml")
+        labels = np.load("labels.npy", allow_pickle=True).item()
+    if model is None:
+        return {"marked": False, "name": None, "message": "Face model was not uploaded"}
+
+    data = request.get_json(silent=True) or {}
+    raw = data.get("image", "")
+    if "," not in raw:
+        return {"marked": False, "name": None, "message": "No frame received"}
+
+    frame = cv2.imdecode(
+        np.frombuffer(base64.b64decode(raw.split(",")[1]), np.uint8),
+        cv2.IMREAD_COLOR,
+    )
+    if frame is None:
+        return {"marked": False, "name": None, "message": "Bad frame"}
+
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, 1.2, 6)
+    if len(faces) == 0:
+        return {"marked": False, "name": None, "message": "No face detected"}
+
+    faces = sorted(faces, key=lambda f: f[2] * f[3], reverse=True)
+    x, y, w, h = faces[0]
+    roi = cv2.resize(cv2.equalizeHist(gray[y:y + h, x:x + w]), (200, 200))
+    label, conf = model.predict(roi)
+    name = labels.get(label, "Unknown") if conf < 85 else "Unknown"
+    if name == "Unknown":
+        return {"marked": False, "name": None, "message": f"Unknown face ({conf:.0f})"}
+    if mark_attendance(name, confidence=conf):
+        return {"marked": True, "name": name, "message": "Marked"}
+    return {"marked": True, "name": name, "message": "Already marked"}
 
 def train_face_model():
     dataset_path = "dataset"
